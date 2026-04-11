@@ -58,6 +58,10 @@ fn main() -> Result<()>{
     if let Some(arg_rng_seed) = args.rng_seed {
         config.rng_seed = Some(arg_rng_seed as usize);
     }
+    if let Some(spacing) = args.spacing {
+        config.min_item_separation = Some(spacing);
+        info!("[MAIN] minimum item spacing: {}", spacing);
+    }
 
     info!("[MAIN] configured to explore for {}s and compress for {}s", explore_dur.as_secs(), compress_dur.as_secs());
 

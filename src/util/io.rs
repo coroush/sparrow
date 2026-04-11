@@ -34,6 +34,9 @@ pub struct MainCli {
 
     #[arg(short = 's', long, help = "Fixed seed for the random number generator")]
     pub rng_seed: Option<u64>,
+
+    #[arg(short = 'p', long, help = "Minimum spacing between pieces (in model units)")]
+    pub spacing: Option<f32>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
