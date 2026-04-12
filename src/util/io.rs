@@ -1,6 +1,7 @@
 use crate::EPOCH;
 use anyhow::{Context, Result};
 use clap::Parser;
+use jagua_rs::probs::bpp::io::ext_repr::{ExtBPInstance, ExtBPSolution};
 use jagua_rs::probs::spp::io::ext_repr::{ExtSPInstance, ExtSPSolution};
 use log::{log, Level, LevelFilter};
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,11 @@ pub struct MainCli {
     /// Path to input file (mandatory)
     #[arg(short = 'i', long, help = "Path to the input JSON file, or a solution JSON file for warm starting")]
     pub input: String,
+
+    /// Packing mode: 'sp' for strip packing (default), 'bp' for bin packing
+    #[arg(short = 'm', long, default_value = "sp",
+          help = "Packing mode: 'sp' for strip packing (default), 'bp' for bin packing")]
+    pub mode: String,
 
     /// Global time limit in seconds (mutually exclusive with -e and -c)
     #[arg(short = 't', long, conflicts_with_all = &["exploration", "compression"], help = "Set a global time limit (in seconds)")]
@@ -128,4 +134,19 @@ pub fn read_spp_input(path: &Path) -> Result<(ExtSPInstance, Option<ExtSPSolutio
             Ok((ext_instance, None))
         }
     }
+}
+
+/// Combined BP instance + solution for JSON output.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ExtBPOutput {
+    #[serde(flatten)]
+    pub instance: ExtBPInstance,
+    pub solution: ExtBPSolution,
+}
+
+pub fn read_bpp_input(path: &Path) -> Result<ExtBPInstance> {
+    let input_str = fs::read_to_string(path).context("could not read input file")?;
+    let ext_instance = serde_json::from_str::<ExtBPInstance>(&input_str)
+        .context("could not parse BPP instance from input file")?;
+    Ok(ext_instance)
 }

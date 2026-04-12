@@ -43,3 +43,13 @@ impl Terminator for BasicTerminator {
         self.timeout
     }
 }
+
+/// A terminator that never requests termination — used for sub-calls that must
+/// run to completion regardless of the outer time budget.
+pub struct AlwaysLiveTerminator;
+
+impl Terminator for AlwaysLiveTerminator {
+    fn kill(&self) -> bool { false }
+    fn new_timeout(&mut self, _: Duration) {}
+    fn timeout_at(&self) -> Option<Instant> { None }
+}

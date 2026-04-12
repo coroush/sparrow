@@ -4,6 +4,37 @@ use jagua_rs::collision_detection::CDEConfig;
 use jagua_rs::geometry::fail_fast::SPSurrogateConfig;
 use std::time::Duration;
 
+// ── Bin Packing Config ────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy)]
+pub struct BinPackConfig {
+    /// Total time limit for the bin packing optimization
+    pub time_limit: Duration,
+    /// Separator config used for within-bin feasibility resolution
+    pub separator_config: SeparatorConfig,
+    /// Maximum consecutive failed bin-reduction attempts before stopping
+    pub max_reduction_strikes: usize,
+    /// Maximum inter-bin move attempts per bin-reduction iteration
+    pub inter_bin_move_budget: usize,
+}
+
+pub const DEFAULT_BINPACK_CONFIG: BinPackConfig = BinPackConfig {
+    time_limit: Duration::from_secs(600),
+    separator_config: SeparatorConfig {
+        iter_no_imprv_limit: 200,
+        strike_limit: 3,
+        log_level: log::Level::Info,
+        n_workers: 3,
+        sample_config: SampleConfig {
+            n_container_samples: 50,
+            n_focussed_samples: 25,
+            n_coord_descents: 3,
+        },
+    },
+    max_reduction_strikes: 5,
+    inter_bin_move_budget: 50,
+};
+
 #[derive(Debug, Clone, Copy)]
 pub struct SparrowConfig {
     pub rng_seed: Option<usize>,

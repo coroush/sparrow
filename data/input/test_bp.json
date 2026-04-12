@@ -1,0 +1,43 @@
+{
+  "name": "test_bp",
+  "bins": [
+    {
+      "id": 0,
+      "stock": 20,
+      "cost": 1,
+      "shape": {
+        "type": "rectangle",
+        "data": { "x_min": 0.0, "y_min": 0.0, "width": 500.0, "height": 300.0 }
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": 0,
+      "demand": 4,
+      "allowed_orientations": [0.0, 90.0, 180.0, 270.0],
+      "shape": {
+        "type": "rectangle",
+        "data": { "x_min": 0.0, "y_min": 0.0, "width": 120.0, "height": 80.0 }
+      }
+    },
+    {
+      "id": 1,
+      "demand": 3,
+      "allowed_orientations": [0.0, 90.0, 180.0, 270.0],
+      "shape": {
+        "type": "rectangle",
+        "data": { "x_min": 0.0, "y_min": 0.0, "width": 150.0, "height": 100.0 }
+      }
+    },
+    {
+      "id": 2,
+      "demand": 6,
+      "allowed_orientations": [0.0, 90.0, 180.0, 270.0],
+      "shape": {
+        "type": "rectangle",
+        "data": { "x_min": 0.0, "y_min": 0.0, "width": 80.0, "height": 60.0 }
+      }
+    }
+  ]
+}
