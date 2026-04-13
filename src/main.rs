@@ -15,6 +15,7 @@ use std::time::Duration;
 
 use anyhow::{bail, Result};
 use rand::rngs::Xoshiro256PlusPlus;
+use sparrow::config::ItemSortKey;
 use sparrow::consts::{DEFAULT_COMPRESS_TIME_RATIO, DEFAULT_EXPLORE_TIME_RATIO, DEFAULT_FAIL_DECAY_RATIO_CMPR, DEFAULT_MAX_CONSEQ_FAILS_EXPL, LOG_LEVEL_FILTER_DEBUG, LOG_LEVEL_FILTER_RELEASE};
 use sparrow::util::ctrlc_terminator::CtrlCTerminator;
 use sparrow::util::svg_exporter::SvgExporter;
@@ -172,6 +173,14 @@ fn run_bin_packing(args: MainCli, rng: Xoshiro256PlusPlus) -> Result<()> {
     } else if args.global_time.is_none() && args.exploration.is_none() {
         warn!("[MAIN] no time limit specified for bin packing");
     }
+
+    // Sort key for initial FFD construction
+    bp_config.sort_key = match args.sort_key.as_str() {
+        "ch-area"      => ItemSortKey::ChArea,
+        "exact-area"   => ItemSortKey::ExactArea,
+        _              => ItemSortKey::ChAreaTimesDiameter,
+    };
+    info!("[MAIN] BP sort key: {}", args.sort_key);
 
     // SPP-compatible CDE/importer config (reuse defaults)
     let spp_config = DEFAULT_SPARROW_CONFIG;

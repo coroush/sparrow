@@ -29,7 +29,7 @@ pub fn bp_optimize(
     validate_items_fit_bins(&instance);
 
     // Phase 1: construct an initial feasible multi-bin solution via FFD + per-bin separator
-    let prob = BpLbfBuilder::new(instance.clone(), rng.clone(), config.separator_config).construct();
+    let prob = BpLbfBuilder::new(instance.clone(), rng.clone(), config.separator_config, config.sort_key).construct();
     let n_initial = prob.layouts.len();
     info!("[BP] initial assignment: {} bins used", n_initial);
 

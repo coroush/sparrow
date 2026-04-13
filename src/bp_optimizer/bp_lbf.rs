@@ -7,6 +7,7 @@
 //!   3. Only open a new bin if both approaches fail for all existing bins
 
 use crate::bp_optimizer::bp_separator::BinSeparator;
+use crate::config::ItemSortKey;
 use crate::eval::lbf_evaluator::LBFEvaluator;
 use crate::eval::sample_eval::SampleEval;
 use crate::optimizer::separator::SeparatorConfig;
@@ -48,6 +49,7 @@ pub struct BpLbfBuilder {
     pub prob: BPProblem,
     pub rng: Xoshiro256PlusPlus,
     pub sep_config: SeparatorConfig,
+    pub sort_key: ItemSortKey,
 }
 
 impl BpLbfBuilder {
@@ -55,9 +57,10 @@ impl BpLbfBuilder {
         instance: BPInstance,
         rng: Xoshiro256PlusPlus,
         sep_config: SeparatorConfig,
+        sort_key: ItemSortKey,
     ) -> Self {
         let prob = BPProblem::new(instance.clone());
-        Self { instance, prob, rng, sep_config }
+        Self { instance, prob, rng, sep_config, sort_key }
     }
 
     pub fn construct(mut self) -> BPProblem {
@@ -67,9 +70,20 @@ impl BpLbfBuilder {
         let sorted: Vec<usize> = (0..n_items)
             .sorted_by_cached_key(|&id| {
                 let item = self.instance.item(id);
-                let ch_area = item.shape_cd.as_ref().surrogate().convex_hull_area;
-                let diameter = item.shape_cd.as_ref().diameter;
-                Reverse(OrderedFloat(ch_area * diameter))
+                let key = match self.sort_key {
+                    ItemSortKey::ChAreaTimesDiameter => {
+                        let ch_area = item.shape_cd.as_ref().surrogate().convex_hull_area;
+                        let diameter = item.shape_cd.as_ref().diameter;
+                        ch_area * diameter
+                    }
+                    ItemSortKey::ChArea => {
+                        item.shape_cd.as_ref().surrogate().convex_hull_area
+                    }
+                    ItemSortKey::ExactArea => {
+                        item.shape_orig.area()
+                    }
+                };
+                Reverse(OrderedFloat(key))
             })
             .flat_map(|id| iter::repeat_n(id, self.instance.item_qty(id)))
             .collect();

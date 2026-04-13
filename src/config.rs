@@ -6,6 +6,18 @@ use std::time::Duration;
 
 // ── Bin Packing Config ────────────────────────────────────────────────────────
 
+/// Controls how items are sorted before the initial FFD construction pass.
+#[derive(Debug, Clone, Copy, Default)]
+pub enum ItemSortKey {
+    /// `convex_hull_area × diameter` — original sparrow default.
+    #[default]
+    ChAreaTimesDiameter,
+    /// Convex hull area alone. Simpler, avoids over-penalising elongated pieces.
+    ChArea,
+    /// Exact polygon area. Uses the true item shape, not the surrogate.
+    ExactArea,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct BinPackConfig {
     /// Total time limit for the bin packing optimization
@@ -16,6 +28,8 @@ pub struct BinPackConfig {
     pub max_reduction_strikes: usize,
     /// Maximum inter-bin move attempts per bin-reduction iteration
     pub inter_bin_move_budget: usize,
+    /// Determines how items are ordered during the initial FFD construction.
+    pub sort_key: ItemSortKey,
 }
 
 pub const DEFAULT_BINPACK_CONFIG: BinPackConfig = BinPackConfig {
@@ -33,6 +47,7 @@ pub const DEFAULT_BINPACK_CONFIG: BinPackConfig = BinPackConfig {
     },
     max_reduction_strikes: 5,
     inter_bin_move_budget: 50,
+    sort_key: ItemSortKey::ChAreaTimesDiameter,
 };
 
 #[derive(Debug, Clone, Copy)]

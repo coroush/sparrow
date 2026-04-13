@@ -43,6 +43,12 @@ pub struct MainCli {
 
     #[arg(short = 'p', long, help = "Minimum spacing between pieces (in model units)")]
     pub spacing: Option<f32>,
+
+    /// Item sort key for initial FFD construction (bin packing only).
+    /// Options: 'ch-area-x-diam' (default), 'ch-area', 'exact-area'
+    #[arg(long, default_value = "ch-area-x-diam",
+          help = "Sort key for initial bin assignment: 'ch-area-x-diam' | 'ch-area' | 'exact-area'")]
+    pub sort_key: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
