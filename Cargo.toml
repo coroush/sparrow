@@ -36,6 +36,7 @@ jiff = "0.2"
 test-case = "3.3"
 clap = { version = "4.5", features = ["derive"] }
 anyhow = "1.0"
+clipper2-rust = "1.0.3"
 
 getrandom = { version = "0.4", features = ["wasm_js"] }
 

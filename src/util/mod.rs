@@ -1,6 +1,7 @@
 pub mod assertions;
 
 pub mod io;
+pub mod spacing;
 pub mod bit_reversal_iterator;
 pub mod listener;
 pub mod svg_exporter;

@@ -87,23 +87,25 @@ fn run_strip_packing(args: MainCli, rng: Xoshiro256PlusPlus) -> Result<()> {
     if let Some(arg_rng_seed) = args.rng_seed {
         config.rng_seed = Some(arg_rng_seed as usize);
     }
-    if let Some(spacing) = args.spacing {
-        config.min_item_separation = Some(spacing);
-        info!("[MAIN] minimum item spacing: {}", spacing);
-    }
-
     info!(
         "[MAIN] configured to explore for {}s and compress for {}s",
         explore_dur.as_secs(),
         compress_dur.as_secs()
     );
 
-    let (ext_instance, ext_solution) = io::read_spp_input(Path::new(&args.input))?;
+    let (mut ext_instance, ext_solution) = io::read_spp_input(Path::new(&args.input))?;
+
+    if let Some(spacing) = args.spacing {
+        info!("[MAIN] pre-offsetting items by {:.3} (spacing/2) using Clipper2", spacing / 2.0);
+        for item in &mut ext_instance.items {
+            item.base.shape = sparrow::util::spacing::offset_shape(&item.base.shape, spacing as f64 / 2.0);
+        }
+    }
 
     let importer = Importer::new(
         config.cde_config,
         config.poly_simpl_tolerance,
-        config.min_item_separation,
+        None,
         config.narrow_concavity_cutoff_ratio,
     );
     let instance = jagua_rs::probs::spp::io::import_instance(&importer, &ext_instance)?;
@@ -184,17 +186,20 @@ fn run_bin_packing(args: MainCli, rng: Xoshiro256PlusPlus) -> Result<()> {
 
     // SPP-compatible CDE/importer config (reuse defaults)
     let spp_config = DEFAULT_SPARROW_CONFIG;
-    let min_item_separation = args.spacing;
-    if let Some(spacing) = min_item_separation {
-        info!("[MAIN] minimum item spacing: {}", spacing);
-    }
 
-    let ext_instance = io::read_bpp_input(Path::new(&args.input))?;
+    let mut ext_instance = io::read_bpp_input(Path::new(&args.input))?;
+
+    if let Some(spacing) = args.spacing {
+        info!("[MAIN] pre-offsetting items by {:.3} (spacing/2) using Clipper2", spacing / 2.0);
+        for item in &mut ext_instance.items {
+            item.base.shape = sparrow::util::spacing::offset_shape(&item.base.shape, spacing as f64 / 2.0);
+        }
+    }
 
     let importer = Importer::new(
         spp_config.cde_config,
         spp_config.poly_simpl_tolerance,
-        min_item_separation,
+        None,
         spp_config.narrow_concavity_cutoff_ratio,
     );
     let instance = jagua_rs::probs::bpp::io::import_instance(&importer, &ext_instance)?;
