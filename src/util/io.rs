@@ -49,6 +49,10 @@ pub struct MainCli {
     #[arg(long, default_value = "ch-area-x-diam",
           help = "Sort key for initial bin assignment: 'ch-area-x-diam' | 'ch-area' | 'exact-area'")]
     pub sort_key: String,
+
+    /// Skip all SVG output (faster, used by Grasshopper which only needs the JSON)
+    #[arg(long, help = "Skip SVG export entirely")]
+    pub no_svg: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

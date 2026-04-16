@@ -110,7 +110,12 @@ pub fn resolve_by_transfers(
             .map(|(pk, pi)| (pk, pi.item_id))
             .collect();
 
-        for (pik, _) in items_in_bin {
+        // Label the pik loop so we can break it when a transfer succeeds.
+        // After a successful transfer, separate_single_bin() may move items inside
+        // src_bin (remove_item + place_item), which reassigns PItemKeys. The
+        // remaining entries in items_in_bin would then be stale and cause a panic
+        // in try_transfer → remove_item. Breaking 'item avoids using those keys.
+        'item: for (pik, _) in items_in_bin {
             for &dst_bin in all_bins {
                 if dst_bin == src_bin || attempts >= budget || term.kill() {
                     if term.kill() { break 'outer; }
@@ -126,7 +131,7 @@ pub fn resolve_by_transfers(
                     let src_feasible = !src_empty
                         && separate_single_bin(prob, src_bin, sep_config, rng, term);
                     if src_feasible || src_empty {
-                        break;
+                        break 'item;
                     }
                 }
                 prob.restore(&snapshot);

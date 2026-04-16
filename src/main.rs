@@ -132,14 +132,19 @@ fn run_strip_packing(args: MainCli, rng: Xoshiro256PlusPlus) -> Result<()> {
     info!("[MAIN] loaded instance {} with #{} items", ext_instance.name, instance.total_item_qty());
 
     let mut svg_exporter = {
-        let final_svg_path = Some(format!("{OUTPUT_DIR}/final_{}.svg", ext_instance.name));
-        let intermediate_svg_dir = match cfg!(feature = "only_final_svg") {
-            true => None,
-            false => Some(format!("{OUTPUT_DIR}/sols_{}", ext_instance.name)),
-        };
-        let live_svg_path = match cfg!(feature = "live_svg") {
-            true => Some(format!("{LIVE_DIR}/.live_solution.svg")),
-            false => None,
+        let (final_svg_path, intermediate_svg_dir, live_svg_path) = if args.no_svg {
+            (None, None, None)
+        } else {
+            let final_svg_path = Some(format!("{OUTPUT_DIR}/final_{}.svg", ext_instance.name));
+            let intermediate_svg_dir = match cfg!(feature = "only_final_svg") {
+                true => None,
+                false => Some(format!("{OUTPUT_DIR}/sols_{}", ext_instance.name)),
+            };
+            let live_svg_path = match cfg!(feature = "live_svg") {
+                true => Some(format!("{LIVE_DIR}/.live_solution.svg")),
+                false => None,
+            };
+            (final_svg_path, intermediate_svg_dir, live_svg_path)
         };
         SvgExporter::new(final_svg_path, intermediate_svg_dir, live_svg_path)
     };
@@ -215,9 +220,11 @@ fn run_bin_packing(args: MainCli, rng: Xoshiro256PlusPlus) -> Result<()> {
         &bp_config,
     );
 
-    // Export SVG
-    let svg_path = format!("{OUTPUT_DIR}/final_{}.svg", ext_instance.name);
-    sparrow::bp_optimizer::export_bp_svg(&solution, &instance, Path::new(&svg_path))?;
+    // Export SVG (skipped when --no-svg is passed, e.g. from Grasshopper)
+    if !args.no_svg {
+        let svg_path = format!("{OUTPUT_DIR}/final_{}.svg", ext_instance.name);
+        sparrow::bp_optimizer::export_bp_svg(&solution, &instance, Path::new(&svg_path))?;
+    }
 
     // Export JSON
     let json_path = format!("{OUTPUT_DIR}/final_{}.json", ext_instance.name);
