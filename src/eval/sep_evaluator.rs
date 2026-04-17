@@ -1,3 +1,4 @@
+use crate::eval::lbf_evaluator::{X_MULTIPLIER, Y_MULTIPLIER};
 use crate::eval::sample_eval::{SampleEval, SampleEvaluator};
 use crate::eval::specialized_jaguars_pipeline::{collect_poly_collisions_in_detector_custom, SpecializedHazardCollector};
 use crate::quantify::tracker::CollisionTracker;
@@ -7,6 +8,11 @@ use jagua_rs::entities::Layout;
 use jagua_rs::entities::PItemKey;
 use jagua_rs::geometry::primitives::SPolygon;
 use jagua_rs::geometry::DTransformation;
+
+/// Weight applied to the LBF gradient in the Clear branch.
+/// Small enough that any collision always outranks any clear position,
+/// but nonzero so the sampler gravitates toward compact bottom-left placements.
+const SEP_LBF_EPSILON: f32 = 1e-4;
 
 pub struct SeparationEvaluator<'a> {
     layout: &'a Layout,
@@ -61,8 +67,12 @@ impl<'a> SampleEvaluator for SeparationEvaluator<'a> {
             // However, since we can asure that this sample will always be rejected, we don't need to spend any more time on it and just return `Invalid`.
             SampleEval::Invalid
         } else if self.collector.is_empty() {
-            // No collisions detected, return clear
-            SampleEval::Clear { loss: 0.0 }
+            // No collisions detected; add a small LBF gradient so the sampler
+            // gravitates toward compact bottom-left positions as a side effect.
+            let poi = self.shape_buff.poi.center;
+            let bbox_corner = self.shape_buff.bbox.corners()[0];
+            let lbf = X_MULTIPLIER * (poi.0 + bbox_corner.0) + Y_MULTIPLIER * (poi.1 + bbox_corner.1);
+            SampleEval::Clear { loss: SEP_LBF_EPSILON * lbf }
         } else {
             // Some collisions detected but withing the upper bound, return collision with total loss
             SampleEval::Collision {

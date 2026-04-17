@@ -33,13 +33,6 @@ const LBF_EXISTING: SampleConfig = SampleConfig {
     n_coord_descents: 3,
 };
 
-/// Samples when opening a new empty bin (item is alone, almost always finds a spot quickly).
-const LBF_NEW_BIN: SampleConfig = SampleConfig {
-    n_container_samples: 200,
-    n_focussed_samples: 0,
-    n_coord_descents: 2,
-};
-
 /// Separator config used for the fallback pass — fewer strikes than the full config
 /// so it stays fast during construction.
 const FALLBACK_SEP_STRIKES: usize = 1;
