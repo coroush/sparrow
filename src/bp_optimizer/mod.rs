@@ -105,8 +105,9 @@ pub fn export_bp_svg(solution: &BPSolution, instance: &BPInstance, path: &Path) 
     Ok(())
 }
 
-/// Warn (or error) if any item's axis-aligned bounding box exceeds every bin's dimensions.
-/// Logs a clear message so Grasshopper's Status panel shows it immediately.
+/// Warn if any item cannot fit in any bin under *any* rotation (continuous sweep).
+/// Sparrow supports continuous rotation, so we check the minimum AABB across rotations
+/// instead of just 0°/90°. Logs a clear message so Grasshopper's Status panel shows it.
 fn validate_items_fit_bins(instance: &BPInstance) {
     use jagua_rs::entities::Instance;
     use log::warn;
@@ -120,22 +121,61 @@ fn validate_items_fit_bins(instance: &BPInstance) {
             let iw = item.shape_cd.bbox.width();
             let ih = item.shape_cd.bbox.height();
 
-            // Check both orientations (item may be rotatable 90°)
-            let fits_normal  = iw <= bw && ih <= bh;
-            let fits_rotated = ih <= bw && iw <= bh;
+            let fits_axis_aligned = (iw <= bw && ih <= bh) || (ih <= bw && iw <= bh);
 
-            if !fits_normal && !fits_rotated {
-                warn!(
-                    "[BP] ERROR: item {} ({:.2}×{:.2}) does not fit in bin ({:.2}×{:.2}) \
-                     in any axis-aligned orientation — increase SheetWidth/SheetHeight",
-                    item.id, iw, ih, bw, bh
-                );
-            } else if !fits_normal && fits_rotated {
-                // Fine — will be rotated — but log it so the user knows
-                info!(
-                    "[BP] note: item {} ({:.2}×{:.2}) only fits rotated 90° in bin ({:.2}×{:.2})",
-                    item.id, iw, ih, bw, bh
-                );
+            if fits_axis_aligned {
+                continue;
+            }
+
+            // Sweep rotations to find the smallest rotated AABB that fits.
+            // Step in 0.5° over [0, 180) — for a polygon the rotated AABB period is 180°.
+            let vertices = &item.shape_cd.vertices;
+            let mut best: Option<(f32, f32, f32)> = None; // (angle_deg, w, h)
+            let steps = 360; // 0.5° resolution
+            for k in 0..steps {
+                let theta = (k as f32) * std::f32::consts::PI / (steps as f32);
+                let (s, c) = theta.sin_cos();
+                let mut x_min = f32::INFINITY;
+                let mut x_max = f32::NEG_INFINITY;
+                let mut y_min = f32::INFINITY;
+                let mut y_max = f32::NEG_INFINITY;
+                for p in vertices {
+                    let xr = p.0 * c - p.1 * s;
+                    let yr = p.0 * s + p.1 * c;
+                    if xr < x_min { x_min = xr; }
+                    if xr > x_max { x_max = xr; }
+                    if yr < y_min { y_min = yr; }
+                    if yr > y_max { y_max = yr; }
+                }
+                let w = x_max - x_min;
+                let h = y_max - y_min;
+                let fits = (w <= bw && h <= bh) || (h <= bw && w <= bh);
+                if fits {
+                    let deg = theta.to_degrees();
+                    match best {
+                        None => best = Some((deg, w, h)),
+                        Some((_, bw_old, bh_old)) if w * h < bw_old * bh_old => {
+                            best = Some((deg, w, h));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            match best {
+                Some((deg, w, h)) => {
+                    info!(
+                        "[BP] note: item {} ({:.2}×{:.2}) only fits in bin ({:.2}×{:.2}) when rotated ~{:.1}° (rotated AABB {:.2}×{:.2})",
+                        item.id, iw, ih, bw, bh, deg, w, h
+                    );
+                }
+                None => {
+                    warn!(
+                        "[BP] ERROR: item {} ({:.2}×{:.2}) does not fit in bin ({:.2}×{:.2}) \
+                         under any rotation — increase SheetWidth/SheetHeight",
+                        item.id, iw, ih, bw, bh
+                    );
+                }
             }
         }
     }
